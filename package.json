@@ -1,0 +1,29 @@
+{
+  "name": "@aefree/pi-wezterm-tools",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "description": "Pi tools for managing WezTerm sessions, layouts, and templates.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/aefreedman/pi-wezterm-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aefreedman/pi-wezterm-tools/issues"
+  },
+  "homepage": "https://github.com/aefreedman/pi-wezterm-tools#readme"
+}

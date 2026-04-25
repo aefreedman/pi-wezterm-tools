@@ -1,0 +1,54 @@
+{
+  "name": "monitoring",
+  "description": "System monitoring dashboard with logs and metrics",
+  "version": "1.0.0",
+  "workspace": "monitoring",
+  "variables": {
+    "LOG_DIR": "~",
+    "DOCKER_DIR": "~",
+    "APP_LOG_CMD": "",
+    "ERROR_LOG_CMD": "",
+    "MONITOR_CMD": "",
+    "DOCKER_PS_CMD": "",
+    "DOCKER_STATS_CMD": ""
+  },
+  "tabs": [
+    {
+      "title": "Logs",
+      "cwd": "{{LOG_DIR}}",
+      "panes": [
+        {
+          "command": "{{APP_LOG_CMD}}"
+        },
+        {
+          "split": "bottom",
+          "splitFrom": 0,
+          "percent": 50,
+          "command": "{{ERROR_LOG_CMD}}"
+        },
+        {
+          "split": "right",
+          "splitFrom": 0,
+          "percent": 30,
+          "command": "{{MONITOR_CMD}}"
+        }
+      ]
+    },
+    {
+      "title": "Docker",
+      "cwd": "{{DOCKER_DIR}}",
+      "panes": [
+        {
+          "command": "{{DOCKER_PS_CMD}}"
+        },
+        {
+          "split": "bottom",
+          "splitFrom": 0,
+          "percent": 50,
+          "command": "{{DOCKER_STATS_CMD}}"
+        }
+      ]
+    }
+  ],
+  "activateTab": 0
+}

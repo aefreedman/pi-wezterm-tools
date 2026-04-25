@@ -1,0 +1,64 @@
+{
+  "name": "fullstack-dev",
+  "description": "Full-stack development environment with backend, frontend, and database",
+  "version": "1.0.0",
+  "workspace": "fullstack",
+  "variables": {
+    "BACKEND_DIR": "~",
+    "FRONTEND_DIR": "~",
+    "DB_DIR": "~",
+    "SHELL_DIR": "~"
+  },
+  "tabs": [
+    {
+      "title": "Backend",
+      "cwd": "{{BACKEND_DIR}}",
+      "panes": [
+        {
+          "command": "npm run dev"
+        },
+        {
+          "split": "bottom",
+          "splitFrom": 0,
+          "percent": 30,
+          "command": "npm run test:watch"
+        }
+      ]
+    },
+    {
+      "title": "Frontend",
+      "cwd": "{{FRONTEND_DIR}}",
+      "panes": [
+        {
+          "command": "npm start"
+        },
+        {
+          "split": "right",
+          "splitFrom": 0,
+          "percent": 40,
+          "command": "npm run storybook"
+        }
+      ]
+    },
+    {
+      "title": "Database",
+      "cwd": "{{DB_DIR}}",
+      "panes": [
+        {
+          "command": "docker compose up postgres"
+        },
+        {
+          "split": "right",
+          "splitFrom": 0,
+          "percent": 50,
+          "command": "docker compose logs -f postgres"
+        }
+      ]
+    },
+    {
+      "title": "Shell",
+      "cwd": "{{SHELL_DIR}}"
+    }
+  ],
+  "activateTab": 0
+}

@@ -1,0 +1,80 @@
+{
+  "name": "microservices",
+  "description": "Microservices monitoring dashboard with multiple service panes",
+  "version": "1.0.0",
+  "workspace": "microservices",
+  "variables": {
+    "AUTH_DIR": "~",
+    "GATEWAY_DIR": "~",
+    "USER_DIR": "~",
+    "METRICS_DIR": "~",
+    "AUTH_LOG_CMD": "",
+    "GATEWAY_LOG_CMD": "",
+    "USER_LOG_CMD": "",
+    "MONITOR_CMD": "",
+    "DOCKER_STATS_CMD": ""
+  },
+  "tabs": [
+    {
+      "title": "Auth Service",
+      "cwd": "{{AUTH_DIR}}",
+      "panes": [
+        {
+          "command": "npm start"
+        },
+        {
+          "split": "bottom",
+          "splitFrom": 0,
+          "percent": 30,
+          "command": "{{AUTH_LOG_CMD}}"
+        }
+      ]
+    },
+    {
+      "title": "API Gateway",
+      "cwd": "{{GATEWAY_DIR}}",
+      "panes": [
+        {
+          "command": "npm start"
+        },
+        {
+          "split": "bottom",
+          "splitFrom": 0,
+          "percent": 30,
+          "command": "{{GATEWAY_LOG_CMD}}"
+        }
+      ]
+    },
+    {
+      "title": "User Service",
+      "cwd": "{{USER_DIR}}",
+      "panes": [
+        {
+          "command": "npm start"
+        },
+        {
+          "split": "bottom",
+          "splitFrom": 0,
+          "percent": 30,
+          "command": "{{USER_LOG_CMD}}"
+        }
+      ]
+    },
+    {
+      "title": "Metrics",
+      "cwd": "{{METRICS_DIR}}",
+      "panes": [
+        {
+          "command": "{{MONITOR_CMD}}"
+        },
+        {
+          "split": "bottom",
+          "splitFrom": 0,
+          "percent": 50,
+          "command": "{{DOCKER_STATS_CMD}}"
+        }
+      ]
+    }
+  ],
+  "activateTab": 0
+}
