@@ -21,22 +21,33 @@ Pi-native template lookup order:
 2. user-global: `~/.pi/agent/wezterm-templates/`
 3. package examples: `templates/examples/`
 
+## Install
+
+Recommended as a global package.
+
+From GitHub:
+
+```bash
+pi install git:git@github.com:aefreedman/pi-wezterm-tools.git
+```
+
+Local development install:
+
+```bash
+pi install <path-to-pi-wezterm-tools>
+```
+
+## Requirements
+
+- `wezterm` installed and available on `PATH`
+- `jq` installed and available on `PATH`
+- `bash` available for running the packaged shell scripts
+
 ## Notes
 
 - The current implementation preserves the existing script-backed workflow where practical.
-- The package-local shell scripts live under `scripts/wezterm/`.
+- Package-local shell scripts live under `scripts/wezterm/`.
 - Example templates ship under `templates/examples/`.
-- This package is intended to be installed globally during migration.
-- Current runtime assumptions:
-  - `wezterm` is installed and on `PATH`
-  - `jq` is installed and on `PATH`
-  - `bash` is available for running the packaged shell scripts
-
-## Install
-
-```bash
-pi install "<path-to-pi-wezterm-tools>"
-```
 
 ## License
 
