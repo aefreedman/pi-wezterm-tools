@@ -130,6 +130,120 @@ function renderCommandResult(toolName: string, result: CommandResult): string {
   return rendered;
 }
 
+type TextLikeComponent = {
+  invalidate: () => void;
+  render: (width: number) => string[];
+};
+
+type RenderTheme = {
+  fg?: (color: string, text: string) => string;
+  bold?: (text: string) => string;
+};
+
+type WeztermToolResult = {
+  content?: Array<{ type?: string; text?: string }>;
+};
+
+const COLLAPSED_RESULT_LINES = 12;
+const ANSI_PATTERN = /\x1b\][^\x07]*(?:\x07|\x1b\\)|\x1b\[[0-?]*[ -/]*[@-~]/g;
+
+function visibleLength(value: string): number {
+  return value.replace(ANSI_PATTERN, "").length;
+}
+
+function truncateAnsiLine(value: string, width: number): string {
+  if (width <= 0 || !value) return "";
+  if (visibleLength(value) <= width) return value;
+
+  const target = Math.max(0, width - 1);
+  let visible = 0;
+  let output = "";
+  for (let index = 0; index < value.length;) {
+    const remaining = value.slice(index);
+    const ansi = remaining.match(ANSI_PATTERN);
+    if (ansi && ansi.index === 0) {
+      output += ansi[0];
+      index += ansi[0].length;
+      continue;
+    }
+
+    if (visible >= target) break;
+    const codePoint = value.codePointAt(index);
+    if (codePoint === undefined) break;
+    const char = String.fromCodePoint(codePoint);
+    output += char;
+    visible += 1;
+    index += char.length;
+  }
+
+  return `${output}…`;
+}
+
+function textComponent(text: string): TextLikeComponent {
+  return {
+    invalidate() {},
+    render(width: number) {
+      if (!text) return [];
+      return text.split(/\r?\n/).map((line) => truncateAnsiLine(line, width));
+    },
+  };
+}
+
+function themed(theme: RenderTheme, color: string, text: string): string {
+  return typeof theme.fg === "function" ? theme.fg(color, text) : text;
+}
+
+function bold(theme: RenderTheme, text: string): string {
+  return typeof theme.bold === "function" ? theme.bold(text) : text;
+}
+
+function extractTextContent(result: WeztermToolResult | undefined): string {
+  return result?.content
+    ?.filter((entry) => entry?.type === "text")
+    .map((entry) => String(entry.text ?? ""))
+    .join("\n") ?? "";
+}
+
+function trimTrailingEmptyLines(lines: string[]): string[] {
+  let end = lines.length;
+  while (end > 0 && lines[end - 1]?.trim() === "") end -= 1;
+  return lines.slice(0, end);
+}
+
+function renderWeztermCall(toolName: string, args: Record<string, unknown>, theme: RenderTheme): TextLikeComponent {
+  const target = args.workspace ?? args.name ?? args.action ?? args.target ?? args.cwd ?? "";
+  const suffix = target ? ` ${themed(theme, "accent", String(target))}` : "";
+  return textComponent(`${themed(theme, "toolTitle", bold(theme, toolName))}${suffix}`);
+}
+
+function renderWeztermResult(
+  toolName: string,
+  result: WeztermToolResult | undefined,
+  options: { expanded?: boolean; isPartial?: boolean } | undefined,
+  theme: RenderTheme,
+): TextLikeComponent {
+  if (options?.isPartial) {
+    return textComponent(themed(theme, "warning", `Running ${toolName}...`));
+  }
+
+  const output = extractTextContent(result);
+  const lines = trimTrailingEmptyLines(output.split(/\r?\n/).map((line) => line.replace(/\t/g, "  ")));
+  const maxLines = options?.expanded ? lines.length : COLLAPSED_RESULT_LINES;
+  const displayLines = lines.slice(0, maxLines);
+  const remaining = lines.length - displayLines.length;
+  const rendered = displayLines.map((line) => themed(theme, "toolOutput", line));
+
+  if (remaining > 0) {
+    rendered.push(themed(theme, "muted", `... (${remaining} more lines, ctrl+o to expand)`));
+  }
+
+  if (rendered.length === 0) {
+    rendered.push(themed(theme, "toolOutput", "(no output)"));
+  }
+
+  return textComponent(rendered.join("\n"));
+}
+
 function getScriptPath(scriptName: string): string {
   return toPosixPath(fileURLToPath(new URL(`./scripts/wezterm/${scriptName}`, import.meta.url)));
 }
@@ -272,6 +386,12 @@ export default function weztermTools(pi: ExtensionAPI) {
       "Prefer project-local or user-global templates when the user mentions named layouts.",
     ],
     parameters: LaunchParams,
+    renderCall(args, theme) {
+      return renderWeztermCall("wezterm_launch", (args ?? {}) as Record<string, unknown>, theme as RenderTheme);
+    },
+    renderResult(result, options, theme) {
+      return renderWeztermResult("wezterm_launch", result as WeztermToolResult | undefined, options, theme as RenderTheme);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const cwd = normalizeCwd(ctx.cwd, params.cwd);
       let configInput = params.config;
@@ -304,6 +424,12 @@ export default function weztermTools(pi: ExtensionAPI) {
     description: "Attach to an existing WezTerm workspace or create a new window in an existing session.",
     promptSnippet: "Attach to existing WezTerm workspaces or create new windows inside them.",
     parameters: AttachParams,
+    renderCall(args, theme) {
+      return renderWeztermCall("wezterm_attach", (args ?? {}) as Record<string, unknown>, theme as RenderTheme);
+    },
+    renderResult(result, options, theme) {
+      return renderWeztermResult("wezterm_attach", result as WeztermToolResult | undefined, options, theme as RenderTheme);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const cwd = normalizeCwd(ctx.cwd, params.cwd);
       const args: string[] = [];
@@ -321,6 +447,12 @@ export default function weztermTools(pi: ExtensionAPI) {
     description: "Check WezTerm health, detect issues, and suggest cleanup actions.",
     promptSnippet: "Inspect WezTerm health, session counts, and cleanup recommendations.",
     parameters: HealthParams,
+    renderCall(args, theme) {
+      return renderWeztermCall("wezterm_health", (args ?? {}) as Record<string, unknown>, theme as RenderTheme);
+    },
+    renderResult(result, options, theme) {
+      return renderWeztermResult("wezterm_health", result as WeztermToolResult | undefined, options, theme as RenderTheme);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const cwd = normalizeCwd(ctx.cwd, params.cwd);
       const args = ["--action", params.action ?? "check"];
@@ -337,6 +469,12 @@ export default function weztermTools(pi: ExtensionAPI) {
     promptSnippet: "Clean up WezTerm panes, tabs, windows, and workspaces.",
     promptGuidelines: ["Prefer non-interactive options only when the user clearly asked for cleanup or deletion."],
     parameters: KillParams,
+    renderCall(args, theme) {
+      return renderWeztermCall("wezterm_kill", (args ?? {}) as Record<string, unknown>, theme as RenderTheme);
+    },
+    renderResult(result, options, theme) {
+      return renderWeztermResult("wezterm_kill", result as WeztermToolResult | undefined, options, theme as RenderTheme);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const cwd = normalizeCwd(ctx.cwd, params.cwd);
       const args = ["--target", params.target];
@@ -354,6 +492,12 @@ export default function weztermTools(pi: ExtensionAPI) {
     description: "List active WezTerm sessions, tabs, and panes.",
     promptSnippet: "List active WezTerm sessions, workspaces, tabs, and panes.",
     parameters: ListParams,
+    renderCall(args, theme) {
+      return renderWeztermCall("wezterm_list", (args ?? {}) as Record<string, unknown>, theme as RenderTheme);
+    },
+    renderResult(result, options, theme) {
+      return renderWeztermResult("wezterm_list", result as WeztermToolResult | undefined, options, theme as RenderTheme);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const cwd = normalizeCwd(ctx.cwd, params.cwd);
       const args = ["--format", params.format ?? "summary"];
@@ -369,6 +513,12 @@ export default function weztermTools(pi: ExtensionAPI) {
     description: "Load and launch a named WezTerm template with optional variable substitution.",
     promptSnippet: "Launch named WezTerm templates with optional variable substitution.",
     parameters: LoadTemplateParams,
+    renderCall(args, theme) {
+      return renderWeztermCall("wezterm_load_template", (args ?? {}) as Record<string, unknown>, theme as RenderTheme);
+    },
+    renderResult(result, options, theme) {
+      return renderWeztermResult("wezterm_load_template", result as WeztermToolResult | undefined, options, theme as RenderTheme);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const cwd = normalizeCwd(ctx.cwd, params.cwd);
       const args = ["--name", params.name];
@@ -388,6 +538,12 @@ export default function weztermTools(pi: ExtensionAPI) {
     description: "List, inspect, validate, or delete WezTerm templates.",
     promptSnippet: "Inspect and manage user-global or project-local WezTerm templates.",
     parameters: TemplateParams,
+    renderCall(args, theme) {
+      return renderWeztermCall("wezterm_template", (args ?? {}) as Record<string, unknown>, theme as RenderTheme);
+    },
+    renderResult(result, options, theme) {
+      return renderWeztermResult("wezterm_template", result as WeztermToolResult | undefined, options, theme as RenderTheme);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const cwd = normalizeCwd(ctx.cwd, params.cwd);
       const args = ["--action", params.action];
@@ -403,6 +559,12 @@ export default function weztermTools(pi: ExtensionAPI) {
     description: "Manage WezTerm workspaces by listing, creating, deleting, renaming, switching, or inspecting them.",
     promptSnippet: "Manage WezTerm workspaces and switch Pi-related terminal contexts.",
     parameters: WorkspaceParams,
+    renderCall(args, theme) {
+      return renderWeztermCall("wezterm_workspace", (args ?? {}) as Record<string, unknown>, theme as RenderTheme);
+    },
+    renderResult(result, options, theme) {
+      return renderWeztermResult("wezterm_workspace", result as WeztermToolResult | undefined, options, theme as RenderTheme);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const cwd = normalizeCwd(ctx.cwd, params.cwd);
       const args = ["--action", params.action];

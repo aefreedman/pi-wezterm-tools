@@ -11,6 +11,9 @@
       "./index.ts"
     ]
   },
+  "scripts": {
+    "test": "npx --yes tsx tests/wezterm-tool-rendering.test.ts"
+  },
   "peerDependencies": {
     "@mariozechner/pi-ai": "*",
     "@mariozechner/pi-coding-agent": "*",
