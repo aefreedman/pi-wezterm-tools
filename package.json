@@ -1,7 +1,7 @@
 {
   "name": "@aefree/pi-wezterm-tools",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "keywords": [
     "pi-package"
@@ -15,8 +15,8 @@
     "test": "npx --yes tsx tests/wezterm-tool-rendering.test.ts && npx --yes tsx tests/run-command.test.ts && npx --yes tsx tests/wezterm-template-loader.integration.test.ts && npx --yes tsx tests/package-validation.test.ts"
   },
   "peerDependencies": {
-    "@mariozechner/pi-ai": "*",
-    "@mariozechner/pi-coding-agent": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
   },
   "description": "Pi tools for managing WezTerm sessions, layouts, and templates.",
