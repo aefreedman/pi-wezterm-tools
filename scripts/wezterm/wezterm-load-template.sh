@@ -14,6 +14,8 @@ USE_MUX=false
 CHECK_EXISTING=true
 ON_EXISTING="warn"
 DOMAIN_NAME=""
+ALLOW_PROJECT_TEMPLATE=false
+ALLOW_COMMAND_VARIABLES=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -25,6 +27,8 @@ while [[ $# -gt 0 ]]; do
     --no-check-existing) CHECK_EXISTING=false; shift ;;
     --on-existing) ON_EXISTING="$2"; shift 2 ;;
     --domain-name) DOMAIN_NAME="$2"; shift 2 ;;
+    --allow-project-template) ALLOW_PROJECT_TEMPLATE=true; shift ;;
+    --allow-command-variables) ALLOW_COMMAND_VARIABLES=true; shift ;;
     *) echo "ERROR: Unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -38,30 +42,49 @@ if [[ -z "$NAME" ]]; then
   exit 2
 fi
 
-# === FIND TEMPLATE ===
-# Look for template (project-local overrides global)
-TEMPLATE_FILE=""
+validate_template_name "$NAME" || exit 2
 
-# Check project-local first
-if [[ -f "$PI_PROJECT_TEMPLATES_DIR/$NAME.json" ]]; then
-  TEMPLATE_FILE="$PI_PROJECT_TEMPLATES_DIR/$NAME.json"
-  log_info "Using project-local template"
-# Check user-global
-elif [[ -n "$PI_GLOBAL_TEMPLATES_DIR" && -f "$PI_GLOBAL_TEMPLATES_DIR/$NAME.json" ]]; then
-  TEMPLATE_FILE="$PI_GLOBAL_TEMPLATES_DIR/$NAME.json"
-  log_info "Using user-global template"
-# Check package examples
-elif [[ -n "$PI_PACKAGE_TEMPLATES_DIR" && -f "$PI_PACKAGE_TEMPLATES_DIR/examples/$NAME.json" ]]; then
-  TEMPLATE_FILE="$PI_PACKAGE_TEMPLATES_DIR/examples/$NAME.json"
-  log_info "Using package example template"
+# === FIND TEMPLATE ===
+PROJECT_TEMPLATE="$PI_PROJECT_TEMPLATES_DIR/$NAME.json"
+GLOBAL_TEMPLATE="$PI_GLOBAL_TEMPLATES_DIR/$NAME.json"
+PACKAGE_TEMPLATE="$PI_PACKAGE_TEMPLATES_DIR/examples/$NAME.json"
+TEMPLATE_FILE=""
+TEMPLATE_SOURCE=""
+TEMPLATE_ROOT=""
+
+if [[ -f "$PROJECT_TEMPLATE" ]]; then
+  if [[ "$ALLOW_PROJECT_TEMPLATE" != true ]]; then
+    if [[ -f "$GLOBAL_TEMPLATE" || -f "$PACKAGE_TEMPLATE" ]]; then
+      log_error "Project-local template '$NAME' shadows another template source and requires explicit opt-in"
+    else
+      log_error "Project-local template '$NAME' requires explicit opt-in"
+    fi
+    log_error "Pass --allow-project-template only after trusting $PROJECT_TEMPLATE"
+    exit 2
+  fi
+  TEMPLATE_FILE="$PROJECT_TEMPLATE"
+  TEMPLATE_SOURCE="project-local"
+  TEMPLATE_ROOT="$PI_PROJECT_TEMPLATES_DIR"
+elif [[ -n "$PI_GLOBAL_TEMPLATES_DIR" && -f "$GLOBAL_TEMPLATE" ]]; then
+  TEMPLATE_FILE="$GLOBAL_TEMPLATE"
+  TEMPLATE_SOURCE="user-global"
+  TEMPLATE_ROOT="$PI_GLOBAL_TEMPLATES_DIR"
+elif [[ -n "$PI_PACKAGE_TEMPLATES_DIR" && -f "$PACKAGE_TEMPLATE" ]]; then
+  TEMPLATE_FILE="$PACKAGE_TEMPLATE"
+  TEMPLATE_SOURCE="package-example"
+  TEMPLATE_ROOT="$PI_PACKAGE_TEMPLATES_DIR/examples"
 else
   log_error "Template '$NAME' not found"
   echo "Searched in:" >&2
-  echo "  $PI_PROJECT_TEMPLATES_DIR/$NAME.json" >&2
-  echo "  $PI_GLOBAL_TEMPLATES_DIR/$NAME.json" >&2
-  echo "  $PI_PACKAGE_TEMPLATES_DIR/examples/$NAME.json" >&2
+  echo "  $PROJECT_TEMPLATE" >&2
+  echo "  $GLOBAL_TEMPLATE" >&2
+  echo "  $PACKAGE_TEMPLATE" >&2
   exit 2
 fi
+
+TEMPLATE_FILE=$(resolve_template_file "$TEMPLATE_ROOT" "$TEMPLATE_FILE") || exit 2
+log_info "Resolved template source: $TEMPLATE_SOURCE"
+log_info "Resolved template path: $TEMPLATE_FILE"
 
 # === LOAD TEMPLATE ===
 TEMPLATE=$(cat "$TEMPLATE_FILE")
@@ -85,7 +108,7 @@ fi
 # === VARIABLE SUBSTITUTION ===
 if [[ -n "$VARIABLES" ]]; then
   log_info "Applying variable substitutions..."
-  TEMPLATE=$(substitute_variables "$TEMPLATE" "$VARIABLES")
+  TEMPLATE=$(substitute_variables "$TEMPLATE" "$VARIABLES" "$ALLOW_COMMAND_VARIABLES")
 fi
 
 # === OVERRIDE WORKSPACE IF SPECIFIED ===
@@ -97,23 +120,23 @@ fi
 # === LAUNCH USING launch-wezterm ===
 log_info "Launching template..."
 
-# Build launch-wezterm arguments
-LAUNCH_ARGS="--config-stdin"
+# Build launch-wezterm arguments without losing value boundaries.
+LAUNCH_ARGS=(--config-stdin)
 
 if [[ "$USE_MUX" == true ]]; then
-  LAUNCH_ARGS="$LAUNCH_ARGS --use-mux"
+  LAUNCH_ARGS+=(--use-mux)
 fi
 
 if [[ "$CHECK_EXISTING" == true ]]; then
-  LAUNCH_ARGS="$LAUNCH_ARGS --check-existing"
+  LAUNCH_ARGS+=(--check-existing)
 else
-  LAUNCH_ARGS="$LAUNCH_ARGS --no-check-existing"
+  LAUNCH_ARGS+=(--no-check-existing)
 fi
 
-LAUNCH_ARGS="$LAUNCH_ARGS --on-existing $ON_EXISTING"
+LAUNCH_ARGS+=(--on-existing "$ON_EXISTING")
 if [[ -n "$DOMAIN_NAME" ]]; then
-  LAUNCH_ARGS="$LAUNCH_ARGS --domain-name $DOMAIN_NAME"
+  LAUNCH_ARGS+=(--domain-name "$DOMAIN_NAME")
 fi
 
-# Execute launch-wezterm
-echo "$TEMPLATE" | "$SCRIPT_DIR/launch-wezterm.sh" $LAUNCH_ARGS
+# Invoke through bash so package extraction does not depend on executable mode.
+printf '%s\n' "$TEMPLATE" | bash "$SCRIPT_DIR/launch-wezterm.sh" "${LAUNCH_ARGS[@]}"

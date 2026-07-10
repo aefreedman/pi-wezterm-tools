@@ -97,16 +97,16 @@ your-project/
       project-dev.json
 ```
 
-Project-local templates override user-global templates with the same name.
+Project-local templates take lookup precedence, but they are not loaded without explicit trust. Pass `allowProjectTemplate=true` to `wezterm_load_template` after reviewing the project template. This opt-in is required even when no user-global or package template has the same name.
 
 ## Variable Substitution
 
 Variables in templates use `{{VARIABLE_NAME}}` syntax. They are replaced when loading:
 
-- Simple string replacement
-- Can be used in: commands, cwds, titles, workspace names
-- Provide values via `--variables` flag
-- Format: `KEY=value,KEY2=value2` or JSON `{"KEY":"value"}`
+- Can be used in commands, cwds, titles, and workspace names.
+- Any variable used in a `command` field is executable input and is rejected unless `allowCommandVariables=true` is explicitly supplied after reviewing the value.
+- Variables used only in non-command fields such as `cwd`, title, or workspace do not require command-variable opt-in.
+- Provide values with `variables` in `KEY=value,KEY2=value2` form or as JSON such as `{"KEY":"value"}`.
 
 ## Example Workflows
 
@@ -120,7 +120,7 @@ git commit -m "Add team dev layout template"
 
 ```text
 # Team members can then load it from Pi
-wezterm_load_template(name="team-dev", variables="PROJECT_DIR=~/their/path")
+wezterm_load_template(name="team-dev", variables="PROJECT_DIR=~/their/path", allowProjectTemplate=true)
 ```
 
 ### Multiple Environments

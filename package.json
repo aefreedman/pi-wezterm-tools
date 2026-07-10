@@ -1,7 +1,7 @@
 {
   "name": "@aefree/pi-wezterm-tools",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "keywords": [
     "pi-package"
@@ -12,7 +12,7 @@
     ]
   },
   "scripts": {
-    "test": "npx --yes tsx tests/wezterm-tool-rendering.test.ts"
+    "test": "npx --yes tsx tests/wezterm-tool-rendering.test.ts && npx --yes tsx tests/run-command.test.ts && npx --yes tsx tests/wezterm-template-loader.integration.test.ts && npx --yes tsx tests/package-validation.test.ts"
   },
   "peerDependencies": {
     "@mariozechner/pi-ai": "*",

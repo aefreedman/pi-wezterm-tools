@@ -121,8 +121,16 @@ if [[ -n "$DOMAIN_NAME" ]]; then
   DOMAIN_ARGS=(--domain-name "$DOMAIN_NAME")
 fi
 
-COMMAND_WRAPPER=("bash" "-c")
-COMMAND_SUFFIX="; exec bash"
+PANE_SHELL="${PI_WEZTERM_PANE_SHELL:-bash}"
+RESOLVED_PANE_SHELL=$(command -v "$PANE_SHELL" 2>/dev/null || true)
+if [[ -z "$RESOLVED_PANE_SHELL" ]]; then
+  log_error "Pane shell is not installed or not on PATH: $PANE_SHELL"
+  log_error "Set PI_WEZTERM_PANE_SHELL to an executable shell path or command name"
+  exit 3
+fi
+export PI_WEZTERM_RESOLVED_PANE_SHELL="$RESOLVED_PANE_SHELL"
+COMMAND_WRAPPER=("$RESOLVED_PANE_SHELL" "-c")
+COMMAND_SUFFIX='; exec "$PI_WEZTERM_RESOLVED_PANE_SHELL"'
 if [[ "$USE_MUX" == true ]] && is_windows && [[ -z "$DOMAIN_NAME" || "$DOMAIN_NAME" == "local" ]]; then
   COMMAND_WRAPPER=("cmd" "/k")
   COMMAND_SUFFIX=""

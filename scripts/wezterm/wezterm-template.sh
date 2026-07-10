@@ -29,6 +29,10 @@ if [[ -z "$ACTION" ]]; then
   exit 2
 fi
 
+if [[ -n "$NAME" ]]; then
+  validate_template_name "$NAME" || exit 2
+fi
+
 # === DETERMINE TEMPLATE DIRECTORY ===
 if [[ "$GLOBAL" == true ]]; then
   TEMPLATE_DIR="$PI_GLOBAL_TEMPLATES_DIR"
@@ -46,7 +50,7 @@ action_list() {
   if [[ -n "$PI_GLOBAL_TEMPLATES_DIR" && -d "$PI_GLOBAL_TEMPLATES_DIR" ]]; then
     echo "User-global templates ($PI_GLOBAL_TEMPLATES_DIR/):"
     for template in "$PI_GLOBAL_TEMPLATES_DIR"/*.json; do
-      if [[ -f "$template" ]]; then
+      if [[ -f "$template" && ! -L "$template" ]]; then
         local name=$(basename "$template" .json)
         local desc=$(jq -r '.description // "No description"' "$template" 2>/dev/null || echo "Invalid JSON")
         echo "  $name - $desc"
@@ -59,7 +63,7 @@ action_list() {
   if [[ -n "$PI_PACKAGE_TEMPLATES_DIR" && -d "$PI_PACKAGE_TEMPLATES_DIR/examples" ]]; then
     echo "Package example templates ($PI_PACKAGE_TEMPLATES_DIR/examples/):"
     for template in "$PI_PACKAGE_TEMPLATES_DIR/examples"/*.json; do
-      if [[ -f "$template" ]]; then
+      if [[ -f "$template" && ! -L "$template" ]]; then
         local name=$(basename "$template" .json)
         local desc=$(jq -r '.description // "No description"' "$template" 2>/dev/null || echo "Invalid JSON")
         echo "  $name - $desc"
@@ -72,7 +76,7 @@ action_list() {
   if [[ -d "$PI_PROJECT_TEMPLATES_DIR" ]]; then
     echo "Project templates ($PI_PROJECT_TEMPLATES_DIR/):"
     for template in "$PI_PROJECT_TEMPLATES_DIR"/*.json; do
-      if [[ -f "$template" ]]; then
+      if [[ -f "$template" && ! -L "$template" ]]; then
         local name=$(basename "$template" .json)
         local desc=$(jq -r '.description // "No description"' "$template" 2>/dev/null || echo "Invalid JSON")
         echo "  $name - $desc"
@@ -89,15 +93,19 @@ action_info() {
   
   # Find template
   local template_file=""
+  local template_root=""
   if [[ "$GLOBAL" == true ]]; then
     if [[ -f "$TEMPLATE_DIR/$NAME.json" ]]; then
       template_file="$TEMPLATE_DIR/$NAME.json"
+      template_root="$TEMPLATE_DIR"
     elif [[ -f "$PI_PACKAGE_TEMPLATES_DIR/examples/$NAME.json" ]]; then
       template_file="$PI_PACKAGE_TEMPLATES_DIR/examples/$NAME.json"
+      template_root="$PI_PACKAGE_TEMPLATES_DIR/examples"
     fi
   else
     if [[ -f "$TEMPLATE_DIR/$NAME.json" ]]; then
       template_file="$TEMPLATE_DIR/$NAME.json"
+      template_root="$TEMPLATE_DIR"
     fi
   fi
   
@@ -105,6 +113,7 @@ action_info() {
     log_error "Template '$NAME' not found"
     exit 3
   fi
+  template_file=$(resolve_template_file "$template_root" "$template_file") || exit 2
   
   # Display info
   echo "Template: $NAME"
@@ -139,15 +148,19 @@ action_validate() {
   
   # Find template
   local template_file=""
+  local template_root=""
   if [[ "$GLOBAL" == true ]]; then
     if [[ -f "$TEMPLATE_DIR/$NAME.json" ]]; then
       template_file="$TEMPLATE_DIR/$NAME.json"
+      template_root="$TEMPLATE_DIR"
     elif [[ -f "$PI_PACKAGE_TEMPLATES_DIR/examples/$NAME.json" ]]; then
       template_file="$PI_PACKAGE_TEMPLATES_DIR/examples/$NAME.json"
+      template_root="$PI_PACKAGE_TEMPLATES_DIR/examples"
     fi
   else
     if [[ -f "$TEMPLATE_DIR/$NAME.json" ]]; then
       template_file="$TEMPLATE_DIR/$NAME.json"
+      template_root="$TEMPLATE_DIR"
     fi
   fi
   
@@ -155,6 +168,7 @@ action_validate() {
     log_error "Template '$NAME' not found"
     exit 3
   fi
+  template_file=$(resolve_template_file "$template_root" "$template_file") || exit 2
   
   echo "Validating template '$NAME'..."
   
@@ -193,6 +207,7 @@ action_delete() {
     log_error "Template '$NAME' not found at $template_file"
     exit 3
   fi
+  template_file=$(resolve_template_file "$TEMPLATE_DIR" "$template_file") || exit 2
   
   if safe_confirm "Delete template '$NAME'? (y/n):"; then
     rm "$template_file"

@@ -34,7 +34,8 @@ windows_path_to_posix() {
   local path="$1"
 
   if [[ "$path" =~ ^([A-Za-z]):\\ ]]; then
-    local drive="${BASH_REMATCH[1],,}"
+    local drive=""
+    drive=$(printf '%s' "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')
     local rest="${path:3}"
     rest="${rest//\\//}"
     echo "/$drive/$rest"
@@ -110,10 +111,65 @@ resolve_windows_command() {
   return 0
 }
 
+use_wezterm_executable() {
+  WEZTERM_EXECUTABLE="$1"
+  wezterm() {
+    "$WEZTERM_EXECUTABLE" "$@"
+  }
+}
+
+resolve_configured_wezterm() {
+  local configured="${PI_WEZTERM_EXECUTABLE:-}"
+  local candidate=""
+
+  if [[ -z "$configured" ]]; then
+    return 1
+  fi
+
+  if [[ "$configured" == */* ]]; then
+    candidate="$configured"
+  else
+    candidate=$(command -v "$configured" 2>/dev/null || true)
+  fi
+
+  if [[ ! -f "$candidate" || ! -x "$candidate" ]]; then
+    echo "ERROR: PI_WEZTERM_EXECUTABLE is not an executable file: $configured" >&2
+    return 1
+  fi
+
+  use_wezterm_executable "$candidate"
+  return 0
+}
+
+resolve_macos_wezterm_bundle() {
+  local candidate="/Applications/WezTerm.app/Contents/MacOS/wezterm"
+
+  if [[ "$(uname -s 2>/dev/null || true)" != "Darwin" ]]; then
+    return 1
+  fi
+
+  if [[ -f "$candidate" && -x "$candidate" ]]; then
+    use_wezterm_executable "$candidate"
+    return 0
+  fi
+
+  return 1
+}
+
 ensure_command_on_path() {
   local cmd="$1"
 
+  if [[ "$cmd" == "wezterm" && -n "${PI_WEZTERM_EXECUTABLE:-}" ]]; then
+    resolve_configured_wezterm
+    return $?
+  fi
+
+  # Preserve the normal bare-command behavior whenever it is available.
   if command -v "$cmd" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ "$cmd" == "wezterm" ]] && resolve_macos_wezterm_bundle; then
     return 0
   fi
 
@@ -402,12 +458,51 @@ get_workspace_window_id() {
 
 # === TEMPLATE UTILITIES ===
 
+validate_template_name() {
+  local name="$1"
+  if [[ "$name" == *"/"* || "$name" == *"\\"* || "$name" == *".."* || ! "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+    log_error "Invalid template name '$name': use letters, numbers, dots, underscores, or hyphens without separators or '..'"
+    return 1
+  fi
+}
+
+resolve_template_file() {
+  local allowed_root="$1"
+  local template_file="$2"
+
+  if [[ -L "$template_file" ]]; then
+    log_error "Template files must not be symbolic links: $template_file"
+    return 1
+  fi
+
+  local canonical_root=""
+  local canonical_directory=""
+  canonical_root=$(cd "$allowed_root" 2>/dev/null && pwd -P) || {
+    log_error "Template root is unavailable: $allowed_root"
+    return 1
+  }
+  canonical_directory=$(cd "$(dirname "$template_file")" 2>/dev/null && pwd -P) || {
+    log_error "Template directory is unavailable: $(dirname "$template_file")"
+    return 1
+  }
+
+  if [[ "$canonical_directory" != "$canonical_root" ]]; then
+    log_error "Template resolves outside its allowed root: $template_file"
+    return 1
+  fi
+
+  printf '%s/%s\n' "$canonical_directory" "$(basename "$template_file")"
+}
+
 substitute_variables() {
-  # Substitute variables in template
-  # Args: $1 = template string, $2 = variables (JSON or key=value)
-  # Returns: Template with substituted values
+  # Substitute variables in template.
+  # Args: $1 = template string, $2 = variables (JSON or key=value),
+  #       $3 = whether command-field variable values are explicitly trusted.
+  # Any variable used in a command field is executable input and requires
+  # explicit opt-in; non-command fields remain ordinary string substitution.
   local template="$1"
   local vars="$2"
+  local allow_command_variables="${3:-false}"
   
   if [[ -z "$vars" ]]; then
     echo "$template"
@@ -438,32 +533,59 @@ substitute_variables() {
   local substitution_script='
 import json
 import sys
-import re
 
-template = sys.stdin.read()
+template = json.loads(sys.stdin.read())
 vars_str = sys.argv[1]
+allow_command_variables = sys.argv[2] == "true"
 
-# Parse variables
 if vars_str.startswith("{"):
-    # JSON format
     variables = json.loads(vars_str)
 else:
-    # key=value format
     variables = {}
     for pair in vars_str.split(","):
         if "=" in pair:
             key, value = pair.split("=", 1)
             variables[key] = value
 
-# Substitute variables
-for key, value in variables.items():
-    pattern = "{{" + key + "}}"
-    template = template.replace(pattern, value)
+variables = {str(key): str(value) for key, value in variables.items()}
 
-print(template, end="")
+def replace_value(value, command_field=False):
+    if not isinstance(value, str):
+        return value
+    result = value
+    for key, replacement in variables.items():
+        pattern = "{{" + key + "}}"
+        if pattern not in result:
+            continue
+        if command_field and not allow_command_variables:
+            raise ValueError(
+                "command variable " + pattern
+                + " requires --allow-command-variables"
+            )
+        safe_replacement = replacement
+        result = result.replace(pattern, safe_replacement)
+    return result
+
+def transform(value, command_field=False):
+    if isinstance(value, dict):
+        return {
+            key: transform(child, command_field=(key == "command"))
+            for key, child in value.items()
+        }
+    if isinstance(value, list):
+        return [transform(child, command_field=command_field) for child in value]
+    return replace_value(value, command_field)
+
+try:
+    transformed = transform(template)
+except ValueError as exc:
+    print("ERROR: " + str(exc), file=sys.stderr)
+    raise SystemExit(2)
+
+print(json.dumps(transformed, separators=(",", ":")), end="")
 '
 
-  echo "$template" | "$python_cmd" -c "$substitution_script" "$vars"
+  echo "$template" | "$python_cmd" -c "$substitution_script" "$vars" "$allow_command_variables"
 }
 
 # === LOGGING UTILITIES ===

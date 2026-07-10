@@ -1,27 +1,11 @@
-import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES, formatSize, truncateHead } from "@mariozechner/pi-coding-agent";
 import { StringEnum } from "@mariozechner/pi-ai";
+import { runCommand } from "./run-command.js";
 import { Type } from "typebox";
 
-type CommandResult = {
-  stdout: string;
-  stderr: string;
-  code: number | null;
-  killed: boolean;
-  timedOut: boolean;
-};
-
-type RunCommandOptions = {
-  cwd: string;
-  stdin?: string;
-  timeoutMs?: number;
-  signal?: AbortSignal;
-};
-
-const DEFAULT_TIMEOUT_MS = 120_000;
 
 function stripAtPrefix(value: string): string {
   return value.startsWith("@") ? value.slice(1) : value;
@@ -48,70 +32,6 @@ function truncateForModel(text: string): string {
   return `${truncation.content}\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines (${formatSize(
     truncation.outputBytes,
   )} of ${formatSize(truncation.totalBytes)})]`;
-}
-
-async function runCommand(command: string, args: string[], options: RunCommandOptions): Promise<CommandResult> {
-  const { cwd, stdin, timeoutMs = DEFAULT_TIMEOUT_MS, signal } = options;
-
-  return await new Promise<CommandResult>((resolve) => {
-    const proc = spawn(command, args, {
-      cwd,
-      shell: false,
-      stdio: [stdin !== undefined ? "pipe" : "ignore", "pipe", "pipe"],
-    });
-
-    let stdout = "";
-    let stderr = "";
-    let settled = false;
-    let timedOut = false;
-
-    const finish = (code: number | null, killed = false) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      signal?.removeEventListener("abort", onAbort);
-      resolve({ stdout, stderr, code, killed, timedOut });
-    };
-
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      proc.kill("SIGTERM");
-      setTimeout(() => {
-        if (!proc.killed) proc.kill("SIGKILL");
-      }, 5000);
-    }, timeoutMs);
-
-    proc.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-
-    proc.stderr.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
-
-    proc.on("error", (error) => {
-      stderr += `${stderr ? "\n" : ""}${error.message}`;
-      finish(1, false);
-    });
-
-    proc.on("close", (code, closeSignal) => {
-      finish(code, closeSignal != null);
-    });
-
-    const onAbort = () => {
-      proc.kill("SIGTERM");
-      setTimeout(() => {
-        if (!proc.killed) proc.kill("SIGKILL");
-      }, 5000);
-    };
-
-    signal?.addEventListener("abort", onAbort, { once: true });
-
-    if (stdin !== undefined && proc.stdin) {
-      proc.stdin.write(stdin);
-      proc.stdin.end();
-    }
-  });
 }
 
 function renderCommandResult(toolName: string, result: CommandResult): string {
@@ -331,6 +251,18 @@ const LoadTemplateParams = Type.Object({
   useMux: Type.Optional(Type.Boolean({ description: "Use WezTerm multiplexer daemon.", default: false })),
   checkExisting: Type.Optional(Type.Boolean({ description: "Check for existing sessions in workspace.", default: true })),
   onExisting: Type.Optional(ON_EXISTING),
+  allowProjectTemplate: Type.Optional(
+    Type.Boolean({
+      description: "Explicitly trust and allow a project-local .pi/wezterm-templates template.",
+      default: false,
+    }),
+  ),
+  allowCommandVariables: Type.Optional(
+    Type.Boolean({
+      description: "Explicitly trust variable values interpolated into template command fields.",
+      default: false,
+    }),
+  ),
   ...CommonCwd,
 });
 
@@ -526,6 +458,8 @@ export default function weztermTools(pi: ExtensionAPI) {
       if (params.workspace) args.push("--workspace", params.workspace);
       if (params.useMux) args.push("--use-mux");
       if (params.domainName) args.push("--domain-name", params.domainName);
+      if (params.allowProjectTemplate) args.push("--allow-project-template");
+      if (params.allowCommandVariables) args.push("--allow-command-variables");
       args.push(params.checkExisting === false ? "--no-check-existing" : "--check-existing");
       args.push("--on-existing", params.onExisting ?? "warn");
       return await executeWeztermScript("wezterm_load_template", "wezterm-load-template.sh", args, { cwd }, signal);

@@ -17,9 +17,13 @@ Pi package that lets Pi manipulate WezTerm sessions, workspaces, layouts, and te
 
 Pi-native template lookup order:
 
-1. project-local: `.pi/wezterm-templates/`
+1. project-local: `.pi/wezterm-templates/` (requires `allowProjectTemplate: true`)
 2. user-global: `~/.pi/agent/wezterm-templates/`
 3. package examples: `templates/examples/`
+
+Project-local templates are executable configuration from the current project, so loading one always requires explicit trust via `allowProjectTemplate: true`. This also prevents an unapproved project template from silently shadowing a user-global or package template. Template names may contain letters, numbers, dots, underscores, and hyphens, but not path separators or `..`.
+
+Any variable interpolated into a command field is executable input and is rejected unless the caller explicitly sets `allowCommandVariables: true` after reviewing the value. Variables used only in non-command fields do not require this opt-in.
 
 ## Install
 
@@ -42,6 +46,10 @@ pi install <path-to-pi-wezterm-tools>
 - `wezterm` installed and available on `PATH`
 - `jq` installed and available on `PATH`
 - `bash` available for running the packaged shell scripts
+
+On macOS, the tools also fall back to `/Applications/WezTerm.app/Contents/MacOS/wezterm` when the `wezterm` command is not on `PATH`. Set `PI_WEZTERM_EXECUTABLE` to an executable file path to explicitly select a WezTerm binary; this override takes precedence over `PATH`.
+
+Pane commands use Bash by default to preserve existing behavior. Set `PI_WEZTERM_PANE_SHELL=/bin/zsh` (or another executable shell) when pane commands should load that shell's startup environment and continue interactively in it.
 
 ## Notes
 
