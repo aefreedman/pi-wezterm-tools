@@ -1,6 +1,6 @@
 # Pi WezTerm Tools
 
-Pi package that lets Pi manipulate WezTerm sessions, workspaces, layouts, and templates.
+Pi package that lets Pi manipulate WezTerm sessions, workspaces, layouts, and templates, and marks tabs when Pi finishes a reply.
 
 ## Tools
 
@@ -12,6 +12,25 @@ Pi package that lets Pi manipulate WezTerm sessions, workspaces, layouts, and te
 - `wezterm_load_template`
 - `wezterm_template`
 - `wezterm_workspace`
+
+## Tab notifications
+
+The bundled notifier marks the target WezTerm tab when Pi finishes a reply and the target pane is not focused.
+
+- Pi's built-in OSC 9;4 support handles in-progress streaming and compaction activity in supporting terminals such as WezTerm.
+- The notifier marks the transition back to the user turn with a `READY` badge.
+- It prefers exact pane targeting via `PI_WEZTERM_PANE_ID` or `WEZTERM_PANE`, then falls back to a cached pane ID and finally a session-title match.
+- It updates the tab title through `wezterm cli set-tab-title`; a companion WezTerm tab formatter can render the stable badge and clear it when the tab becomes active.
+
+Supported notifier environment variables:
+
+- `PI_WEZTERM_NOTIFY_ENABLED`
+- `PI_WEZTERM_EXECUTABLE`
+- `PI_WEZTERM_NOTIFY_COOLDOWN_MS`
+- `PI_WEZTERM_NOTIFY_TIMEOUT_MS`
+- `PI_WEZTERM_NOTIFICATION_TEXT`
+- `PI_WEZTERM_PANE_ID`
+- `WEZTERM_PANE`
 
 ## Template locations
 
@@ -43,7 +62,8 @@ pi install <path-to-pi-wezterm-tools>
 
 ## Requirements
 
-- `wezterm` installed and available on `PATH`
+- `wezterm` installed and available on `PATH` (or `PI_WEZTERM_EXECUTABLE` set to its full path)
+- WezTerm environment variables available in the target terminal session for best notification pane targeting
 - `jq` installed and available on `PATH`
 - `bash` available for running the packaged shell scripts
 
@@ -51,8 +71,15 @@ On macOS, the tools also fall back to `/Applications/WezTerm.app/Contents/MacOS/
 
 Pane commands use Bash by default to preserve existing behavior. Set `PI_WEZTERM_PANE_SHELL=/bin/zsh` (or another executable shell) when pane commands should load that shell's startup environment and continue interactively in it.
 
+## Testing
+
+```bash
+npm test
+```
+
 ## Notes
 
+- Tab notification behavior was consolidated from `@aefree/pi-wezterm-tab-notifier`; install only this package to avoid duplicate notifications.
 - The current implementation preserves the existing script-backed workflow where practical.
 - Package-local shell scripts live under `scripts/wezterm/`.
 - Example templates ship under `templates/examples/`.

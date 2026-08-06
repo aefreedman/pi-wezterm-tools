@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Consolidated the WezTerm tab notifier extension, configuration documentation, and tests from `@aefree/pi-wezterm-tab-notifier` into this package.
 
 ## 0.1.3 - 2026-07-24
 

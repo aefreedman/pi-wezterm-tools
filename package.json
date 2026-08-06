@@ -8,18 +8,19 @@
   ],
   "pi": {
     "extensions": [
-      "./index.ts"
+      "./index.ts",
+      "./extensions/wezterm-tab-flash-notifier.ts"
     ]
   },
   "scripts": {
-    "test": "npx --yes tsx tests/wezterm-tool-rendering.test.ts && npx --yes tsx tests/run-command.test.ts && npx --yes tsx tests/wezterm-template-loader.integration.test.ts && npx --yes tsx tests/package-validation.test.ts"
+    "test": "npx --yes tsx tests/wezterm-tool-rendering.test.ts && npx --yes tsx tests/run-command.test.ts && npx --yes tsx tests/wezterm-template-loader.integration.test.ts && npx --yes tsx tests/wezterm-tab-notifier.test.ts && npx --yes tsx tests/package-validation.test.ts"
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
   },
-  "description": "Pi tools for managing WezTerm sessions, layouts, and templates.",
+  "description": "Pi tools for managing WezTerm sessions, layouts, templates, and tab notifications.",
   "license": "MIT",
   "repository": {
     "type": "git",
