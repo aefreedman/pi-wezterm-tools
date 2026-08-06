@@ -48,7 +48,13 @@ Any variable interpolated into a command field is executable input and is reject
 
 Recommended as a global package.
 
-From GitHub:
+From npm:
+
+```bash
+pi install npm:@aefree/pi-wezterm-tools
+```
+
+From GitHub for development:
 
 ```bash
 pi install git:git@github.com:aefreedman/pi-wezterm-tools.git
@@ -79,8 +85,7 @@ npm test
 
 ## Notes
 
-- Tab notification behavior was consolidated from `@aefree/pi-wezterm-tab-notifier`; install only this package to avoid duplicate notifications.
-- The current implementation preserves the existing script-backed workflow where practical.
+- This package includes the tab notification extension; enable only the notification configuration you want Pi to load.
 - Package-local shell scripts live under `scripts/wezterm/`.
 - Example templates ship under `templates/examples/`.
 

@@ -1,35 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.1.4 - 2026-08-06
+
+Initial public npm release.
 
 ### Added
 
-- Consolidated the WezTerm tab notifier extension, configuration documentation, and tests from `@aefree/pi-wezterm-tab-notifier` into this package.
+- Pi tools for launching, attaching to, inspecting, and managing WezTerm sessions, workspaces, layouts, and templates.
+- Package-shipped WezTerm layout examples and guarded loading of project-local templates and command variables.
+- A tab notification extension that marks an unfocused target tab when Pi finishes a reply.
 
-## 0.1.3 - 2026-07-24
+### Security
 
-### Changed
-
-- Marked Pi-bundled core dependencies as optional peers so Pi git installs do not create redundant per-package `node_modules` directories.
-
-## 0.1.2 - 2026-07-10
-
-### Changed
-
-- Migrated Pi extension imports and peer dependencies to the `@earendil-works` package scope.
-
-## 0.1.1 - 2026-07-09
-
-### Fixed
-
-- Invoke the nested WezTerm launcher through Bash and preserve launch argument boundaries.
-- Require explicit opt-in for project-local templates, reject unsafe template names across loading and management, enforce template-root containment, and report the resolved template source and path.
-- Require explicit opt-in for every variable interpolated into a command field, including quoted and partial command placeholders.
-- Enforce LF line endings for packaged shell scripts and validate shell/package behavior in tests.
-- Escalate timed-out or aborted script processes to `SIGKILL` until they settle, rather than treating a sent `SIGTERM` as termination.
-- Keep Windows path normalization compatible with stock macOS Bash 3.2 and discover WezTerm from `PI_WEZTERM_EXECUTABLE` or the standard macOS app bundle when it is not on `PATH`.
-- Allow macOS users to select zsh or another pane shell through `PI_WEZTERM_PANE_SHELL` while retaining Bash as the default.
-
-### Added
-
-- Added macOS CI coverage that runs shell validation with stock `/bin/bash`.
+- Project-local templates and variables interpolated into command fields require explicit caller opt-in.

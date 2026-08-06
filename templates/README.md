@@ -7,7 +7,7 @@ This directory contains reusable WezTerm layout templates.
 Package-shipped examples live here:
 
 ```
-pi-packages/wezterm-tools/templates/
+templates/
 ├── README.md           # This file
 ├── examples/           # Example templates
 │   ├── fullstack-dev.json
@@ -81,10 +81,10 @@ wezterm_template(action="info", name="fullstack-dev")
 
 ## Creating Templates Manually
 
-1. Create a `.json` file in this directory
-2. Use the template format above
-3. Use `{{VARIABLE_NAME}}` for substitutable values
-4. Test with `wezterm_load_template`
+1. Create a `.json` file in `~/.pi/agent/wezterm-templates/` or your project's `.pi/wezterm-templates/` directory.
+2. Use the template format above.
+3. Use `{{VARIABLE_NAME}}` for substitutable values.
+4. Test with `wezterm_load_template`.
 
 ## Project-Local Templates
 
