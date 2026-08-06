@@ -9,6 +9,7 @@ Initial public npm release.
 - Pi tools for launching, attaching to, inspecting, and managing WezTerm sessions, workspaces, layouts, and templates.
 - Package-shipped WezTerm layout examples and guarded loading of project-local templates and command variables.
 - A tab notification extension that marks an unfocused target tab when Pi finishes a reply.
+- Reproducible locked test tooling and release validation.
 
 ### Security
 

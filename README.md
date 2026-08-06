@@ -72,6 +72,7 @@ pi install <path-to-pi-wezterm-tools>
 - WezTerm environment variables available in the target terminal session for best notification pane targeting
 - `jq` installed and available on `PATH`
 - `bash` available for running the packaged shell scripts
+- `python3` or `python` available when substituting template variables; template loading fails with a clear error when neither is installed
 
 On macOS, the tools also fall back to `/Applications/WezTerm.app/Contents/MacOS/wezterm` when the `wezterm` command is not on `PATH`. Set `PI_WEZTERM_EXECUTABLE` to an executable file path to explicitly select a WezTerm binary; this override takes precedence over `PATH`.
 

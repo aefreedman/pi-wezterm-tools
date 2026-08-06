@@ -24,7 +24,10 @@
     ]
   },
   "scripts": {
-    "test": "npx --yes tsx tests/wezterm-tool-rendering.test.ts && npx --yes tsx tests/run-command.test.ts && npx --yes tsx tests/wezterm-template-loader.integration.test.ts && npx --yes tsx tests/wezterm-tab-notifier.test.ts && npx --yes tsx tests/package-validation.test.ts"
+    "test": "tsx tests/wezterm-tool-rendering.test.ts && tsx tests/run-command.test.ts && tsx tests/wezterm-template-loader.integration.test.ts && tsx tests/wezterm-tab-notifier.test.ts && tsx tests/package-validation.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "4.23.9"
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",

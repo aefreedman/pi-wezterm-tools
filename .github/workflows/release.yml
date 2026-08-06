@@ -20,4 +20,6 @@ jobs:
           node-version: 22.14.0
       - run: npm install --global npm@11.5.1
       - run: npm --version
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
       - run: npm publish --access public
