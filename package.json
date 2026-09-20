@@ -27,6 +27,8 @@
     "test": "tsx tests/wezterm-tool-rendering.test.ts && tsx tests/run-command.test.ts && tsx tests/wezterm-template-loader.integration.test.ts && tsx tests/wezterm-tab-notifier.test.ts && tsx tests/package-validation.test.ts"
   },
   "devDependencies": {
+    "@earendil-works/pi-ai": "0.86.1",
+    "@earendil-works/pi-coding-agent": "0.86.1",
     "tsx": "4.23.9"
   },
   "peerDependencies": {

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Pin development validation dependencies to Pi 0.86.1 while retaining optional wildcard peers for Pi-provided runtime packages.
+
 ## 0.1.4 - 2026-08-06
 
 Initial public npm release.
