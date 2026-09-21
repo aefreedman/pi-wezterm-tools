@@ -2,25 +2,37 @@ name: Publish npm package
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to publish
+        required: true
+        type: string
 
 permissions:
   contents: read
   id-token: write
+
+env:
+  RELEASE_TAG: ${{ inputs.tag }}
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
       - run: npm install --global npm@11.5.1
       - run: npm --version
-      - name: Verify selected ref is the package version tag
+      - name: Verify selected tag is the package version tag
         run: |
-          test "$GITHUB_REF_TYPE" = "tag"
-          test "$GITHUB_REF_NAME" = "v$(node -p \"require('./package.json').version\")"
+          version="$(node -p "require('./package.json').version")"
+          test "${RELEASE_TAG}" = "v${version}"
+          test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "$(git rev-parse HEAD)"
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
       - run: npm publish --access public
