@@ -1,6 +1,6 @@
 {
   "name": "@aefree/pi-wezterm-tools",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "keywords": [
     "pi-package",
@@ -27,8 +27,8 @@
     "test": "tsx tests/wezterm-tool-rendering.test.ts && tsx tests/run-command.test.ts && tsx tests/wezterm-template-loader.integration.test.ts && tsx tests/wezterm-tab-notifier.test.ts && tsx tests/package-validation.test.ts"
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "0.86.1",
-    "@earendil-works/pi-coding-agent": "0.86.1",
+    "@earendil-works/pi-ai": "0.87.0",
+    "@earendil-works/pi-coding-agent": "0.87.0",
     "tsx": "4.23.9"
   },
   "peerDependencies": {
