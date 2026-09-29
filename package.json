@@ -2,6 +2,9 @@
   "name": "@aefree/pi-wezterm-tools",
   "version": "0.1.5",
   "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "keywords": [
     "pi-package",
     "wezterm",
@@ -29,7 +32,7 @@
   "devDependencies": {
     "@earendil-works/pi-ai": "0.99.1",
     "@earendil-works/pi-coding-agent": "0.99.1",
-    "tsx": "4.23.9"
+    "tsx": "4.23.15"
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",

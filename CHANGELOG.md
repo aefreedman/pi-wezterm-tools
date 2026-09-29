@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- pin local tsx 4.23.15; require Node >=22.19.0 for the Pi runtime.
+
 - Align development and deterministic validation with Pi 0.99.1.
 
 ## 0.1.5 - 2026-09-21
