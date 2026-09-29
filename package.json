@@ -1,6 +1,6 @@
 {
   "name": "@aefree/pi-wezterm-tools",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "type": "module",
   "engines": {
     "node": ">=22.19.0"
@@ -27,7 +27,7 @@
     ]
   },
   "scripts": {
-    "test": "tsx tests/wezterm-tool-rendering.test.ts && tsx tests/run-command.test.ts && tsx tests/wezterm-template-loader.integration.test.ts && tsx tests/wezterm-tab-notifier.test.ts && tsx tests/package-validation.test.ts"
+    "test": "node tests/npm-identity.test.mjs && tsx tests/wezterm-tool-rendering.test.ts && tsx tests/run-command.test.ts && tsx tests/wezterm-template-loader.integration.test.ts && tsx tests/wezterm-tab-notifier.test.ts && tsx tests/package-validation.test.ts"
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "0.99.1",

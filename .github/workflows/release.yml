@@ -25,7 +25,7 @@ jobs:
           ref: ${{ env.RELEASE_TAG }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.14.0
+          node-version: 22.19.0
       - run: npm install --global npm@11.5.1
       - run: npm --version
       - name: Verify selected tag is the package version tag
@@ -35,4 +35,17 @@ jobs:
           test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "$(git rev-parse HEAD)"
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
-      - run: npm publish --access public
+      - run: npm pack --dry-run --json
+      - name: Reconcile immutable npm identity
+        id: identity
+        run: node .github/scripts/npm-identity.mjs before
+      - name: Publish and verify immutable identity
+        if: steps.identity.outputs.publish == 'true'
+        run: |
+          # A failed response may follow a successful publication. Never blindly retry.
+          if npm publish --access public; then
+            echo "Publish returned success; checking registry identity."
+          else
+            echo "Publish returned failure; checking for partial success."
+          fi
+          node .github/scripts/npm-identity.mjs after
