@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Let a successful `npm publish` complete the release without waiting for npm metadata propagation; stop on ambiguous publish failures for manual identity reconciliation before retrying.
+
 ## 0.1.6 - 2026-09-29
 
 ### Changed

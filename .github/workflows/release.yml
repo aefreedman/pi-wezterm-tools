@@ -45,13 +45,8 @@ jobs:
       - name: Reconcile immutable npm identity
         id: identity
         run: node .github/scripts/npm-identity.mjs before
-      - name: Publish and verify immutable identity
+      - name: Publish missing immutable version
         if: steps.identity.outputs.publish == 'true'
-        run: |
-          # A failed response may follow a successful publication. Never blindly retry.
-          if npm publish --access public; then
-            echo "Publish returned success; checking registry identity."
-          else
-            echo "Publish returned failure; checking for partial success."
-          fi
-          node .github/scripts/npm-identity.mjs after
+        # A failed response may follow a successful publication; stop and reconcile
+        # manually before any retry. Registry visibility is not a success gate.
+        run: npm publish --access public
