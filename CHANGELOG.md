@@ -9,6 +9,7 @@
 - Align development and deterministic validation with Pi 0.99.1.
 - Pin local tsx 4.23.15 and require Node >=22.19.0 for the Pi runtime and release runner.
 - Reconcile npm version and source commit before publication, skip only matching published identities, and verify identity after successful or uncertain publication responses.
+- Automatically publish stable GitHub releases through the existing trusted publisher, retaining manual recovery against the exact version tag.
 
 ## 0.1.5 - 2026-09-21
 
