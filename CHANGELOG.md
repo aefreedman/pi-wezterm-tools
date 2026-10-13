@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.1.7 - 2026-10-13
+
+- Refresh exact Pi development dependencies and reproducible lockfiles to 1.2.0; keep runtime peers unchanged.
+
 ### Fixed
 
 - Let a successful `npm publish` complete the release without waiting for npm metadata propagation; stop on ambiguous publish failures for manual identity reconciliation before retrying.
