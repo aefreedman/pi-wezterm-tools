@@ -86,6 +86,11 @@ try {
   const archiveName = archives[0]!;
   const listed = spawnSync("tar", ["-tf", archiveName], { cwd: packDirectory, encoding: "utf8" });
   assert.equal(listed.status, 0, listed.stderr);
+  assert.ok(listed.stdout.split(/\r?\n/).includes("package/CHANGELOG.md"), "Pi must discover the root changelog in the package");
+  const changelog = spawnSync("tar", ["-xOf", archiveName, "package/CHANGELOG.md"], { cwd: packDirectory, encoding: "utf8" });
+  assert.equal(changelog.status, 0, changelog.stderr);
+  assert.match(changelog.stdout, /^# Changelog\r?\n/);
+  assert.match(changelog.stdout, /## Unreleased/);
   const packedShellMembers = listed.stdout.split(/\r?\n/).filter((name) => name.endsWith(".sh"));
   assert.equal(packedShellMembers.length, shellFiles.length, "real package should contain every shell script");
 

@@ -11,6 +11,7 @@
     "terminal"
   ],
   "files": [
+    "CHANGELOG.md",
     "index.ts",
     "run-command.ts",
     "extensions",
@@ -27,11 +28,11 @@
     ]
   },
   "scripts": {
-    "test": "node tests/npm-identity.test.mjs && tsx tests/wezterm-tool-rendering.test.ts && tsx tests/run-command.test.ts && tsx tests/wezterm-template-loader.integration.test.ts && tsx tests/wezterm-tab-notifier.test.ts && tsx tests/package-validation.test.ts"
+    "test": "node tests/npm-identity.test.mjs && tsx tests/wezterm-tool-rendering.test.ts && tsx tests/pi-host.test.ts && tsx tests/run-command.test.ts && tsx tests/wezterm-template-loader.integration.test.ts && tsx tests/wezterm-tab-notifier.test.ts && tsx tests/package-validation.test.ts"
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "1.2.0",
-    "@earendil-works/pi-coding-agent": "1.2.0",
+    "@earendil-works/pi-ai": "1.5.0",
+    "@earendil-works/pi-coding-agent": "1.5.0",
     "tsx": "4.23.15"
   },
   "peerDependencies": {

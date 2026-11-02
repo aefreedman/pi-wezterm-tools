@@ -2,8 +2,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES, formatSize, truncateHead } from "@earendil-works/pi-coding-agent";
-import { StringEnum } from "@earendil-works/pi-ai";
-import { runCommand } from "./run-command.js";
+import { StringEnum as schemaStringEnum } from "@earendil-works/pi-ai";
+import { runCommand, type CommandResult } from "./run-command.js";
 import { Type } from "typebox";
 
 
@@ -41,6 +41,10 @@ function renderCommandResult(toolName: string, result: CommandResult): string {
 
   if (result.timedOut) {
     throw new Error(`${toolName} timed out.\n\n${rendered}`);
+  }
+
+  if (result.killed) {
+    throw new Error(`${toolName} was terminated.\n\n${rendered}`);
   }
 
   if (code !== 0) {
@@ -166,6 +170,11 @@ function renderWeztermResult(
 
 function getScriptPath(scriptName: string): string {
   return toPosixPath(fileURLToPath(new URL(`./scripts/wezterm/${scriptName}`, import.meta.url)));
+}
+
+// Raw Node pi-ai exports pi-schema schemas; retain TypeBox inference too.
+function StringEnum<const T extends readonly string[]>(values: T, options?: { description?: string; default?: T[number] }) {
+  return Type.Unsafe<T[number]>(schemaStringEnum(values, options));
 }
 
 const WORKSPACE_ACTION = StringEnum(["list", "create", "delete", "rename", "switch", "info"] as const, {
