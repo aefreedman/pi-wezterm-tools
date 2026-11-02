@@ -1,6 +1,6 @@
 {
   "name": "@aefree/pi-wezterm-tools",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "engines": {
     "node": ">=22.19.0"

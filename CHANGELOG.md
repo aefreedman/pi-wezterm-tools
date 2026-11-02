@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.8 - 2026-11-02
+
 - Refresh exact Pi development dependencies and validation to 1.5.0, preserving optional runtime peers.
 - Keep StringEnum parameter inference working in both raw Node and Pi's extension loader.
 - Treat terminated terminal commands as errors even if a zero exit code is reported.
